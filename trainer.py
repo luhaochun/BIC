@@ -114,6 +114,7 @@ class Trainer:
         train_ys = []
 
         test_accs = []
+	
         for inc_i in range(dataset.batch_num):
             print(f"Incremental num : {inc_i}")
             train, val, test = dataset.getNextClasses(inc_i)
@@ -137,7 +138,11 @@ class Trainer:
                         batch_size=batch_size, shuffle=False)
             test_data = DataLoader(BatchData(test_xs, test_ys, self.input_transform_eval),
                         batch_size=batch_size, shuffle=False)
-            optimizer = optim.SGD(self.model.parameters(), lr=lr, momentum=0.9,  weight_decay=2e-4)
+
+            weight_decay = 2e-4 * dataset.batch_num / (inc_i + 1)
+            print(f"Incremental num : {inc_i} with decay :{weight_decay}")
+
+            optimizer = optim.SGD(self.model.parameters(), lr=lr, momentum=0.9,  weight_decay=weight_decay)
             # scheduler = LambdaLR(optimizer, lr_lambda=adjust_cifar100)
             # scheduler = StepLR(optimizer, step_size=70, gamma=0.1)
             scheduler = MultiStepLR(optimizer, milestones=[100, 150, 200], gamma=0.1)
@@ -187,7 +192,6 @@ class Trainer:
             test_acc.append(acc)
             test_accs.append(max(test_acc))
             print(test_accs)
-            exit()
 
 
     def bias_forward(self, input):
