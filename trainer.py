@@ -8,7 +8,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 from torchvision.transforms import Compose, CenterCrop, Normalize, Scale, Resize, ToTensor, ToPILImage
-from torch.optim.lr_scheduler import LambdaLR, StepLR
+from torch.optim.lr_scheduler import LambdaLR, StepLR, MultiStepLR
 
 import numpy as np
 import glob
@@ -32,7 +32,7 @@ class Trainer:
         self.dataset = Cifar100()
         self.model = PreResNet(32,total_cls).cuda()
         print(self.model)
-        self.model = nn.DataParallel(self.model, device_ids=[0,1])
+        self.model = nn.DataParallel(self.model, device_ids=[0,1,2,3])
         self.bias_layer1 = BiasLayer().cuda()
         self.bias_layer2 = BiasLayer().cuda()
         self.bias_layer3 = BiasLayer().cuda()
@@ -139,7 +139,8 @@ class Trainer:
                         batch_size=batch_size, shuffle=False)
             optimizer = optim.SGD(self.model.parameters(), lr=lr, momentum=0.9,  weight_decay=2e-4)
             # scheduler = LambdaLR(optimizer, lr_lambda=adjust_cifar100)
-            scheduler = StepLR(optimizer, step_size=70, gamma=0.1)
+            # scheduler = StepLR(optimizer, step_size=70, gamma=0.1)
+            scheduler = MultiStepLR(optimizer, milestones=[100, 150, 200], gamma=0.1)
 
 
             # bias_optimizer = optim.SGD(self.bias_layers[inc_i].parameters(), lr=lr, momentum=0.9)
@@ -186,6 +187,7 @@ class Trainer:
             test_acc.append(acc)
             test_accs.append(max(test_acc))
             print(test_accs)
+            exit()
 
 
     def bias_forward(self, input):
